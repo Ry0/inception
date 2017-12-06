@@ -17,14 +17,15 @@ def load_data():
     y_train = y_train[:100]
     print(x_train.shape)
 
-    data_upscaled = np.zeros((100, 3, 299, 299))
+    data_upscaled = np.zeros((100, 299, 299, 3))
 
     for i, img in enumerate(x_train):
-        im = img.transpose((1, 2, 0))
-        large_img = cv2.resize(
-            im, dsize=(299, 299), interpolation=cv2.INTER_CUBIC)
-        data_upscaled[i] = large_img.transpose((2, 0, 1))
-
+        # im = img.transpose((1, 2, 0))
+        data_upscaled[i] = cv2.resize(img, dsize=(299, 299), interpolation=cv2.INTER_CUBIC)
+        # data_upscaled[i] = large_img.transpose((2, 0, 1))
+        # cv2.imshow('image', data_upscaled[i])
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
     y_train = to_categorical(y_train, 10)
 
     return data_upscaled, y_train
@@ -44,6 +45,6 @@ def main():
                   loss_weights={'predictions': 1., 'aux_classifier': 0.2})
 
     model.fit(x_train, {'predictions': y_train, 'aux_classifier': y_train},
-              nb_epoch=50, batch_size=8)
+              epochs=50, batch_size=8)
 
 main()

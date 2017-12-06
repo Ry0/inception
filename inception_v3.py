@@ -15,7 +15,7 @@ from keras.utils.data_utils import get_file
 from keras import backend as K
 from keras.layers import Dense, GlobalAveragePooling2D
 from keras.layers.core import Dropout, Lambda
-from keras.engine.topology import merge
+from keras.layers import merge, concatenate
 import warnings
 from keras.layers.pooling import GlobalAveragePooling2D
 
@@ -81,13 +81,12 @@ def InceptionV3(include_top=True, weights='imagenet',
     branch3x3dbl = conv2d_bn(branch3x3dbl, 96, 3, 3, weight_decay=weight_decay)
     branch3x3dbl = conv2d_bn(branch3x3dbl, 96, 3, 3, weight_decay=weight_decay)
 
-    branch_pool = AveragePooling2D(
-        (3, 3), strides=(1, 1), border_mode='same')(x)
+    branch_pool = AveragePooling2D((3, 3), strides=(1, 1), padding='same')(x)
     branch_pool = conv2d_bn(branch_pool, 32, 1, 1, weight_decay=weight_decay)
 
-    x = merge([branch1x1, branch5x5, branch3x3dbl, branch_pool],
-              mode='concat', concat_axis=channel_axis,
-              name='mixed_0')
+    x = concatenate([branch1x1, branch5x5, branch3x3dbl, branch_pool],
+                    axis=channel_axis,
+                    name='mixed_0')
 
     for i in range(2):
         branch1x1 = conv2d_bn(x, 64, 1, 1, weight_decay=weight_decay)
@@ -102,12 +101,12 @@ def InceptionV3(include_top=True, weights='imagenet',
             branch3x3dbl, 96, 3, 3, weight_decay=weight_decay)
 
         branch_pool = AveragePooling2D(
-            (3, 3), strides=(1, 1), border_mode='same')(x)
+            (3, 3), strides=(1, 1), padding='same')(x)
         branch_pool = conv2d_bn(
             branch_pool, 64, 1, 1, weight_decay=weight_decay)
 
-        x = merge([branch1x1, branch5x5, branch3x3dbl, branch_pool],
-                  mode='concat', concat_axis=channel_axis,
+        x = concatenate([branch1x1, branch5x5, branch3x3dbl, branch_pool],
+                  axis=channel_axis,
                   name='mixed_' + str(i + 1))
 
     # mixed_3: 17 x 17 x 768
@@ -121,9 +120,9 @@ def InceptionV3(include_top=True, weights='imagenet',
         branch3x3dbl, 96, 3, 3, subsample=(2, 2),
         border_mode='valid', weight_decay=weight_decay)
 
-    branch_pool = MaxPooling2D((3, 3), strides=(2, 2), border_mode='valid')(x)
-    x = merge([branch3x3, branch3x3dbl, branch_pool], mode='concat',
-              concat_axis=channel_axis, name='mixed_3')
+    branch_pool = MaxPooling2D((3, 3), strides=(2, 2), padding='valid')(x)
+    x = concatenate([branch3x3, branch3x3dbl, branch_pool],
+                    axis=channel_axis, name='mixed_3')
 
     # mixed_4: 17 x 17 x 768
     branch1x1 = conv2d_bn(x, 192, 1, 1, weight_decay=weight_decay)
@@ -143,11 +142,11 @@ def InceptionV3(include_top=True, weights='imagenet',
         branch7x7dbl, 192, 1, 7, weight_decay=weight_decay)
 
     branch_pool = AveragePooling2D(
-        (3, 3), strides=(1, 1), border_mode='same')(x)
+        (3, 3), strides=(1, 1), padding='same')(x)
     branch_pool = conv2d_bn(branch_pool, 192, 1, 1, weight_decay=weight_decay)
 
-    x = merge([branch1x1, branch7x7, branch7x7dbl, branch_pool],
-              mode='concat', concat_axis=channel_axis, name='mixed_4')
+    x = concatenate([branch1x1, branch7x7, branch7x7dbl, branch_pool],
+                    axis=channel_axis, name='mixed_4')
 
     # mixed 5, 6: 17 x 17 x 768
     for i in range(2):
@@ -168,13 +167,13 @@ def InceptionV3(include_top=True, weights='imagenet',
             branch7x7dbl, 192, 1, 7, weight_decay=weight_decay)
 
         branch_pool = AveragePooling2D(
-            (3, 3), strides=(1, 1), border_mode='same')(x)
+            (3, 3), strides=(1, 1), padding='same')(x)
         branch_pool = conv2d_bn(
             branch_pool, 192, 1, 1, weight_decay=weight_decay)
 
-        x = merge([branch1x1, branch7x7, branch7x7dbl, branch_pool],
-                  mode='concat', concat_axis=channel_axis,
-                  name='mixed_' + str(i + 5))
+        x = concatenate([branch1x1, branch7x7, branch7x7dbl, branch_pool],
+                        axis=channel_axis,
+                        name='mixed_' + str(i + 5))
 
     # mixed 7: 17 x 17 x 768
     branch1x1 = conv2d_bn(x, 192, 1, 1, weight_decay=weight_decay)
@@ -194,17 +193,17 @@ def InceptionV3(include_top=True, weights='imagenet',
         branch7x7dbl, 192, 1, 7, weight_decay=weight_decay)
 
     branch_pool = AveragePooling2D(
-        (3, 3), strides=(1, 1), border_mode='same')(x)
+        (3, 3), strides=(1, 1), padding='same')(x)
     branch_pool = conv2d_bn(branch_pool, 192, 1, 1, weight_decay=weight_decay)
 
-    x = merge([branch1x1, branch7x7, branch7x7dbl, branch_pool],
-              mode='concat', concat_axis=channel_axis,
-              name='mixed_7')
+    x = concatenate([branch1x1, branch7x7, branch7x7dbl, branch_pool],
+                    axis=channel_axis,
+                    name='mixed_7')
 
     if aux_include:
         # Auxiliary Head logits
         aux_classifier = AveragePooling2D(
-            (5, 5), strides=(3, 3), border_mode='valid')(x)
+            (5, 5), strides=(3, 3), padding='valid')(x)
         aux_classifier = conv2d_bn(
             aux_classifier, 128, 1, 1, weight_decay=weight_decay)
 
@@ -218,7 +217,7 @@ def InceptionV3(include_top=True, weights='imagenet',
 
         if weight_decay and weight_decay > 0:
             aux_classifier = Dense(num_classes, activation='softmax',
-                                   W_regularizer=l2(weight_decay),
+                                   kernel_regularizer=l2(weight_decay),
                                    name='aux_classifier')(aux_classifier)
         else:
             aux_classifier = Dense(
@@ -240,40 +239,40 @@ def InceptionV3(include_top=True, weights='imagenet',
                             border_mode='valid',
                             weight_decay=weight_decay)
 
-    branch_pool = MaxPooling2D((3, 3), strides=(2, 2), border_mode='valid')(x)
+    branch_pool = MaxPooling2D((3, 3), strides=(2, 2), padding='valid')(x)
 
-    x = merge([branch3x3, branch7x7x3, branch_pool],
-              mode='concat', concat_axis=channel_axis,
-              name='mixed_8')
+    x = concatenate([branch3x3, branch7x7x3, branch_pool],
+                    axis=channel_axis,
+                    name='mixed_8')
 
     # mixed 9 10: 8 x 8 x 2048
     for i in range(2):
         branch1x1 = conv2d_bn(x, 320, 1, 1, weight_decay=weight_decay)
 
         branch3x3 = conv2d_bn(x, 384, 1, 1, weight_decay=weight_decay)
-        branch3x3 = merge([conv2d_bn(branch3x3, 384, 1, 3,
+        branch3x3 = concatenate([conv2d_bn(branch3x3, 384, 1, 3,
                                      weight_decay=weight_decay),
-                           conv2d_bn(branch3x3, 384, 3, 1,
+                                conv2d_bn(branch3x3, 384, 3, 1,
                                      weight_decay=weight_decay)],
-                          mode='concat', concat_axis=channel_axis)
+                                axis=channel_axis)
 
         branch3x3dbl = conv2d_bn(x, 448, 1, 1, weight_decay=weight_decay)
         branch3x3dbl = conv2d_bn(
             branch3x3dbl, 384, 3, 3, weight_decay=weight_decay)
-        branch3x3dbl = merge([conv2d_bn(branch3x3dbl, 384, 1, 3,
+        branch3x3dbl = concatenate([conv2d_bn(branch3x3dbl, 384, 1, 3,
                                         weight_decay=weight_decay),
-                              conv2d_bn(branch3x3dbl, 384, 3, 1,
+                                    conv2d_bn(branch3x3dbl, 384, 3, 1,
                                         weight_decay=weight_decay)],
-                             mode='concat', concat_axis=channel_axis)
+                                    axis=channel_axis)
 
         branch_pool = AveragePooling2D(
-            (3, 3), strides=(1, 1), border_mode='same')(x)
+            (3, 3), strides=(1, 1), padding='same')(x)
         branch_pool = conv2d_bn(
             branch_pool, 192, 1, 1, weight_decay=weight_decay)
 
-        x = merge([branch1x1, branch3x3, branch3x3dbl, branch_pool],
-                  mode='concat', concat_axis=channel_axis,
-                  name='mixed_' + str(9 + i))
+        x = concatenate([branch1x1, branch3x3, branch3x3dbl, branch_pool],
+                        axis=channel_axis,
+                        name='mixed_' + str(9 + i))
 
     # Dimension reduction
     # 2048 x 8 x 8
@@ -289,7 +288,7 @@ def InceptionV3(include_top=True, weights='imagenet',
     if weight_decay and weight_decay > 0:
         predictions = Dense(num_classes,
                             activation='softmax',
-                            W_regularizer=l2(weight_decay),
+                            kernel_regularizer=l2(weight_decay),
                             name='predictions')(x)
     else:
         predictions = Dense(num_classes,
